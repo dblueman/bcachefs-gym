@@ -6,8 +6,10 @@ import (
    "os"
    "os/exec"
    "log/slog"
+   "math/rand"
    "strconv"
    "strings"
+   "time"
 )
 
 const (
@@ -17,7 +19,8 @@ const (
 )
 
 var (
-   log = slog.New(slog.NewTextHandler(os.Stderr, nil))
+   flagSeed  = flag.Int64("seed", -1, "random seed")
+   log       = slog.New(slog.NewTextHandler(os.Stderr, nil))
    blockDevs []string
 )
 
@@ -102,6 +105,13 @@ func main() {
       flag.Usage()
       os.Exit(2)
    }
+
+   if *flagSeed != -1 {
+      *flagSeed = time.Now().UnixNano()
+      log.Info("using seed %d", *flagSeed)
+   }
+
+   rand.Seed(*flagSeed)
 
    err := _main()
    if err != nil {
