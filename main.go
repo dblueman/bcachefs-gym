@@ -50,12 +50,12 @@ func unmount() error {
    return nil
 }
 
-func prob(vector []string, p float32, args... string) {
-   if rand.Float32() < p {
+func prob(vector *[]string, p float32, args... string) {
+   if rand.Float32() > p {
       return
    }
 
-   vector = append(vector, args...)
+   *vector = append(*vector, args...)
 }
 
 func cycle() error {
