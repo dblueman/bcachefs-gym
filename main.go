@@ -1,6 +1,7 @@
 package main
 
 import (
+   "errors"
    "flag"
    "fmt"
    "os"
@@ -49,41 +50,65 @@ func unmount() error {
    return nil
 }
 
-func _main() error {
-   // remove any existing
-   _ = launch("rmmod", "brd")
-
-   err := launch("modprobe", "brd",
-      "rd_size=" + strconv.Itoa(brdSize),
-      "rd_Count=" + strconv.Itoa(brdCount),
-   )
-   if err != nil {
-      return err
+func prob(vector []string, p float32, args... string) {
+   if rand.Float32() < p {
+      return
    }
 
-   for i := 0; i < brdCount; i++ {
+   vector = append(vector, args...)
+}
+
+func cycle() error {
+   err := launch("modprobe", "brd",
+      "rd_size=" + strconv.Itoa(brdSize),
+      "rd_nr=" + strconv.Itoa(brdCount),
+   )
+   if err != nil {
+      return fmt.Errorf("cycle: %w", err)
+   }
+
+   defer func() {
+      // remove any existing
+      err = launch("rmmod", "brd")
+   }()
+
+   blockDevs = []string{}
+
+   for i := 0; i < 1 + rand.Intn(brdCount - 1); i++ {
       blockDevs = append(blockDevs,
          fmt.Sprintf("/dev/ram%d", i),
       )
    }
 
-   for {
-      err = create()
-      if err != nil {
-         return err
-      }
+   err = format()
+   if err != nil {
+      return fmt.Errorf("cycle: %w", err)
+   }
 
-      err = mount()
-      if err != nil {
-         return err
-      }
+   err = mount()
+   if err != nil {
+      return fmt.Errorf("cycle: %w", err)
+   }
 
-      err = workload()
-      if err != nil {
-         return err
-      }
-
+   defer func() {
       err = unmount()
+   }()
+
+   err = workload()
+   if err != nil {
+      return fmt.Errorf("cycle: %w", err)
+   }
+
+   return err
+}
+
+func _main() error {
+   if os.Getuid() != 0 {
+      return errors.New("please run as root")
+   }
+
+   for {
+      err := cycle()
       if err != nil {
          return err
       }
