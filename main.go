@@ -21,7 +21,6 @@ const (
 
 var (
    flagSeed  = flag.Int64("seed", -1, "random seed")
-   log       = slog.New(slog.NewTextHandler(os.Stderr, nil))
    blockDevs []string
 )
 
@@ -30,11 +29,11 @@ func launch(args... string) error {
    cmd.Stdout = os.Stdout
    cmd.Stderr = os.Stderr
 
-   log.Info("[" + strings.Join(args, " ") + "]")
+   slog.Info("[" + strings.Join(args, " ") + "]")
 
    err := cmd.Run()
    if err != nil {
-      log.Error(err.Error())
+      slog.Error(err.Error())
       return fmt.Errorf("launch: %w", err)
    }
 
@@ -112,6 +111,23 @@ func _main() error {
       return errors.New("please run as root")
    }
 
+   info, _ := debug.ReadBuildInfo()
+   sha := "unknown"
+   mod := ""
+
+   for _, elem := range info.Settings {
+      switch elem.Key {
+      case "vcs.revision":
+         sha = elem.Value[:6]
+      case "vcs.modified":
+         if elem.Value == "true" {
+            mod = "+"
+         }
+      }
+   }
+
+   slog.Info("build SHA", sha, mod)
+
    for {
       err := cycle()
       if err != nil {
@@ -128,6 +144,10 @@ func usage() {
 }
 
 func main() {
+   slog.SetDefault(
+      slog.New(slog.NewTextHandler(os.Stderr, nil)),
+   )
+
    flag.Usage = usage
    flag.Parse()
 
@@ -138,7 +158,7 @@ func main() {
 
    if *flagSeed != -1 {
       *flagSeed = time.Now().UnixNano()
-      log.Info("using seed %d", *flagSeed)
+      slog.Info("using seed %d", *flagSeed)
    }
 
    rand.Seed(*flagSeed)
