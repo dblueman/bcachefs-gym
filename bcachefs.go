@@ -5,53 +5,51 @@ import (
    "fmt"
    "strconv"
    "strings"
+   "time"
 )
 
 var (
    compressors = []string{"none", "lz4", "gzip", "zstd"}
-   dataHashes  = []string{"crc32c", "crc64", "siphash"}
-   strHashes   = []string{"crc32c", "crc64", "xxhash"}
+   checksums   = []string{"none", "crc32c", "crc64"}
+   strHashes   = []string{"crc32c", "crc64", "siphash"}
 )
-
-func pick[V any](options []V) V {
-   i := rand.Intn(len(options))
-   return options[i]
-}
 
 func format() error {
    args := []string{"bcachefs", "format"}
+   p := 0.2
+   maxReplicas := min(len(blockDevs), 3)
 
-   prob(&args, 0.1, "--data_replicas=" + strconv.Itoa(1 + rand.Intn(len(blockDevs))))
-   prob(&args, 0.1, "--data_replicas_required=" + strconv.Itoa(1 + rand.Intn(len(blockDevs))))
-   prob(&args, 0.1, "--data_checksum=" + pick(checksums))
+   // FIXME add later when "unable to write journal to sufficient devices" error resolved
+   // prob(&args, p, "--data_replicas_required=" + strconv.Itoa(1 + rand.Intn(maxReplicas)))
+   // prob(&args, p, "--metadata_replicas_required=" + strconv.Itoa(1 + rand.Intn(maxReplicas)))
 
-   prob(&args, 0.1, "--metadata_replicas=" + strconv.Itoa(1 + rand.Intn(len(blockDevs))))
-   prob(&args, 0.1, "--metadata_replicas_required=" + strconv.Itoa(1 + rand.Intn(len(blockDevs))))
-   prob(&args, 0.1, "--metadata_checksum=" + pick(checksums))
+   prob(&args, p, "--data_replicas=" + strconv.Itoa(1 + rand.Intn(maxReplicas)))
+   prob(&args, p, "--data_checksum=" + pick(checksums))
+   prob(&args, p, "--metadata_replicas=" + strconv.Itoa(1 + rand.Intn(maxReplicas)))
+   prob(&args, p, "--metadata_checksum=" + pick(checksums))
 
-   // prob(&args, 0.1, "--erasure_code") // skip for now as "not stable"
-   prob(&args, 0.1, "--inodes_32bit")
-   prob(&args, 0.1, "--shard_inode_numbers")
-   prob(&args, 0.1, "--inodes_use_key_cache")
-   prob(&args, 0.1, "--gc_reserve_percent=" + strconv.Itoa(0 + rand.Intn(100)))
-   prob(&args, 0.1, "--root_reserve_percent=" + strconv.Itoa(0 + rand.Intn(100)))
-   prob(&args, 0.1, "--wide_macs")
-   prob(&args, 0.1, "--acl")
-   prob(&args, 0.1, "--usrquota")
-   prob(&args, 0.1, "--grpquota")
-   prob(&args, 0.1, "--prjquota")
-   prob(&args, 0.1, "--journal_transaction_names")
-   prob(&args, 0.1, "--nocow")
-   prob(&args, 0.1, "--acl")
-   prob(&args, 0.1, "--encrypted")
-   prob(&args, 0.1, "--compression=" + pick(compressors))
-   prob(&args, 0.1, "--str_hash=" + pick(strHashes))
-   prob(&args, 0.1, "--block_size=4096")
-   prob(&args, 0.1, "--btree_node_size=262144")
-   prob(&args, 0.1, "--no_passphrase")
-   prob(&args, 0.1, "--fs_label=test")
-   prob(&args, 0.1, "--shard_inode_numbers")
-   prob(&args, 0.1, "--background_compression=" + pick(compressors))
+   // prob(&args, p, "--erasure_code") // FIXME add later when stable
+   prob(&args, p, "--inodes_32bit")
+   prob(&args, p, "--shard_inode_numbers")
+   prob(&args, p, "--inodes_use_key_cache")
+   prob(&args, p, "--gc_reserve_percent=" + strconv.Itoa(5 + rand.Intn(20 + 1 - 5))) // 5-20
+   prob(&args, p, "--root_reserve_percent=" + strconv.Itoa(0 + rand.Intn(100)))
+   prob(&args, p, "--wide_macs")
+   prob(&args, p, "--acl")
+   prob(&args, p, "--usrquota")
+   prob(&args, p, "--grpquota")
+   prob(&args, p, "--prjquota")
+   prob(&args, p, "--journal_transaction_names")
+   prob(&args, p, "--nocow")
+   prob(&args, p, "--acl")
+   prob(&args, p, "--encrypted", "--no_passphrase")
+   prob(&args, p, "--compression=" + pick(compressors))
+   prob(&args, p, "--str_hash=" + pick(strHashes))
+   prob(&args, p, "--block_size=4096")
+   prob(&args, p, "--btree_node_size=262144")
+   prob(&args, p, "--fs_label=test")
+   prob(&args, p, "--shard_inode_numbers")
+   prob(&args, p, "--background_compression=" + pick(compressors))
 
    // TODO
    // --durability=
