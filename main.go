@@ -8,8 +8,10 @@ import (
    "os/exec"
    "log/slog"
    "math/rand"
+   "runtime/debug"
    "strconv"
    "strings"
+   "sync"
    "time"
 )
 
@@ -22,6 +24,7 @@ const (
 var (
    flagSeed  = flag.Int64("seed", -1, "random seed")
    blockDevs []string
+   mountBusy sync.WaitGroup
 )
 
 func launch(args... string) error {
@@ -98,10 +101,14 @@ func cycle() error {
       err = unmount()
    }()
 
+   go tunables()
+
    err = workload()
    if err != nil {
       return fmt.Errorf("cycle: %w", err)
    }
+
+   mountBusy.Wait()
 
    return err
 }

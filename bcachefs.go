@@ -99,5 +99,35 @@ func tunables() error {
    // attr ...
 
    // runtime options via /sys/fs/bcachefs/<uuid>/options/
+
+   mountBusy.Add(1)
+
+   commands := []string{
+      "add", "remove", "online", "offline",
+      "evacuate", "set-state", "resize", "resize-journal",
+   }
+
+   time.Sleep(10 * time.Second)
+
+   for workloadActive.Load() {
+      args := []string{"bcachefs", "device", pick(commands)}
+
+      if args[2] == "add" {
+         args = append(args, mountPath)
+      }
+
+      args = append(args, pick(blockDevs))
+
+      if args[2] == "resize-journal" {
+         args = append(args, strconv.Itoa(rand.Intn(brdSize)))
+      }
+
+      launch(args...)
+
+      time.Sleep(3 * time.Second)
+   }
+
+   mountBusy.Done()
+
    return nil
 }
