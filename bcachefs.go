@@ -50,12 +50,10 @@ func format() error {
    prob(&args, p, "--fs_label=test")
    prob(&args, p, "--shard_inode_numbers")
    prob(&args, p, "--background_compression=" + pick(compressors))
-
-   // TODO
-   // --durability=
-   // --foreground_target=
-   // --metadata_target=
-   // --promote_target=
+   prob(&args, p, "--foreground_target=" + pick(blockDevs))
+   prob(&args, p, "--metadata_target=" + pick(blockDevs))
+   prob(&args, p, "--promote_target=" + pick(blockDevs))
+   prob(&args, p, "--durability=" + strconv.Itoa(randRange(1, min(len(blockDevs), 3))))
 
    args = append(args, blockDevs...)
 

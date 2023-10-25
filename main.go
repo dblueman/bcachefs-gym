@@ -65,6 +65,15 @@ func pick[V any](options []V) V {
    return options[i]
 }
 
+func randRange(a, b int) int {
+   d := b - a
+   if d == 0 {
+      return a
+   }
+
+   return a + rand.Intn(b - a)
+}
+
 func cycle() error {
    err := launch("modprobe", "brd",
       "rd_size=" + strconv.Itoa(brdSize),
